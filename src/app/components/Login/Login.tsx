@@ -119,29 +119,31 @@ const Login = () => {
   };
 
   const startPolling = (uuid: string) => {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-    }
+    if (pollingInterval) clearInterval(pollingInterval);
 
     const interval = setInterval(async () => {
       try {
-        const timestamp = Date.now();
         const response = await axios.get(
-          `http://localhost:3000/login/wx/check?timestamp=${timestamp}&uuid=${uuid}`
+          `http://localhost:3000/login/wx/check?uuid=${uuid}`,
+          { timeout: 10000 } // 增加超时时间
         );
 
         const { wx_errcode: status, wx_code } = response.data;
         setScanStatus(status);
 
         if (status === 405) {
+          console.log("收到 wx_code:", wx_code); // 调试日志
           setWxCode(wx_code);
-          handleWeChatLogin(wx_code);
-          clearInterval(interval);
+          clearInterval(interval); // 先停止轮询
+          await handleWeChatLogin(wx_code); // 确保登录请求完成
         } else if (status === 403 || status === 402) {
           clearInterval(interval);
         }
       } catch (error) {
         console.error("检测扫码状态错误:", error);
+        if (axios.isAxiosError(error)) {
+          setError(`请求失败: ${error.message}`);
+        }
       }
     }, 2000);
 
@@ -152,18 +154,21 @@ const Login = () => {
     setIsLoading(true);
     setError("");
     try {
+      console.log("尝试使用 wx_code 登录:", code); // 调试日志
       const response = await axios.get(
-        `http://localhost:3000/login/openplat?code=${code}`
+        `http://localhost:3000/login/openplat?code=${code}`,
+        { timeout: 10000 }
       );
-      console.log("微信登录成功:", response.data);
+      console.log("微信登录成功:", response.data); // 打印后端返回的数据
+
       const { token, vip_token } = response.data;
       localStorage.setItem("auth_token", token);
       localStorage.setItem("vip_token", vip_token);
       setIsLoggedIn(true);
       setShowLoginBox(false);
     } catch (error) {
-      setError("微信登录失败，请重试");
       console.error("微信登录错误:", error);
+      setError("微信登录失败，请重试");
     } finally {
       setIsLoading(false);
     }

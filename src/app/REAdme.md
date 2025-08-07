@@ -57,6 +57,7 @@ res.status(204).end();
 next();
 }
 });
+
 将
 if (req.protocol === 'https') {
 res.append('Set-Cookie', `KUGOU_API_PLATFORM=${process.env.platform}; PATH=/; SameSite=None; Secure`);
@@ -173,4 +174,38 @@ return () => {
 };
 }, [dependencies]); // 依赖数组,在1.当组件挂载或某些状态变化时需要从api获取数据, 空数组表示只在组件挂载时执行2.设置和清理事件监听器时 3.手动操作dom 4.依赖状态变化时执行操作,5设置和清除定时器
 
-## useState
+## git 使用操作
+
+cd ~/Desktop/我的网站 # 进入你的文件夹（改成你的实际路径）
+git init # 初始化仓库
+git add . # 添加所有文件
+git commit -m "第一次上传我的网站" # 提交记录
+git branch -M main # 确保分支叫 main
+
+在github上信件新建一个空仓库，
+git remote add origin https://github.com/AshburMei/仓库名.git
+git push -u origin main
+
+# 修改文件
+
+进入文件
+cd 文件
+git add . //添加所有更改
+git commit -m ‘我干了什么事情’
+git push //上传
+
+# 下载github上的最新版本
+
+git pull
+
+##分支管理
+创建一个新分支
+git checkout -b new-design
+切换回主分支
+git checkout main
+分支合并
+git checkout main
+git merge new-design
+git push
+删除分支
+git branch -d new-design

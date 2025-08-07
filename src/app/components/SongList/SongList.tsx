@@ -2,23 +2,19 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { SongsItem } from "@/types/songlist-types/songsitem";
-import { UrlList } from "@/types/songlist-types/urlsList";
 import { parseLRC, findCurrentLine } from "@/utils/lrcParser";
-import { LyricLine } from "@/types/songlist-types/songsitem";
+import {
+  LyricLine,
+  PlayListResponse,
+  SongListResponse,
+} from "@/types/songlist-types/songsitem";
 import "./SongList.scss";
 
-type WebAudioPlayerProps = {
-  songs: SongsItem[];
-  urlsList: string[];
-  textList?: string[];
-};
-
-const WebAudioPlayer: React.FC<WebAudioPlayerProps> = ({
-  songs,
-  urlsList,
-  textList = [],
-}) => {
+const WebAudioPlayer = () => {
   // 播放器状态
+  const [songs, setSongs] = useState<SongsItem[]>([]);
+  const [urlsList, setUrlsList] = useState<string[]>([]);
+  const [textList, setTextList] = useState<(LyricLine[] | null)[]>([]);
   const [currentSong, setCurrentSong] = useState<SongsItem | null>(null);
   const [currentSongIndex, setCurrentSongIndex] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -29,6 +25,9 @@ const WebAudioPlayer: React.FC<WebAudioPlayerProps> = ({
   const [playbackRate, setPlaybackRate] = useState(1.0);
   const [isLoop, setIsLoop] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   // 歌词状态
   const [currentLyrics, setCurrentLyrics] = useState<LyricLine[]>([]);
   const [currentLineIndex, setCurrentLineIndex] = useState(-1);
@@ -47,6 +46,137 @@ const WebAudioPlayer: React.FC<WebAudioPlayerProps> = ({
   // 可视化
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showVisualizer, setShowVisualizer] = useState(false);
+  const currentSongRef = useRef<SongsItem | null>(null);
+
+  // 更新 currentSong 的辅助函数
+  const setCurrentSongSafe = useCallback((song: SongsItem | null) => {
+    currentSongRef.current = song;
+    setCurrentSong(song);
+  }, []);
+  // 获取歌曲数据
+  const getPlayList = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // 1. 获取用户歌单
+      const playListRes = await fetch(`http://localhost:3000/user/playlist`, {
+        credentials: "include",
+      });
+      const playListData: PlayListResponse = await playListRes.json();
+
+      const playListArray = playListData?.data?.info.map((item: any) => ({
+        name: item.name,
+        global_collection_id: item.global_collection_id,
+      }));
+
+      const getPlayListSongArray = playListArray.map(async (item: any) => {
+        try {
+          const res = await fetch(
+            `http://localhost:3000/playlist/track/all?id=${item.global_collection_id}`,
+            { credentials: "include" }
+          );
+          const listSongData: SongListResponse = await res.json();
+          return {
+            playlist: item,
+            songs: listSongData.data?.songs || [],
+          };
+        } catch (error) {
+          console.log(`获取歌单歌曲失败`);
+          return { songs: [] as SongsItem[] };
+        }
+      });
+
+      const allSongs = await Promise.all(getPlayListSongArray);
+
+      // 获取歌曲URL - 修改为只保留有有效URL的歌曲
+      if (allSongs[1]?.songs) {
+        const songsWithUrls = await Promise.all(
+          allSongs[1].songs.map(async (song: SongsItem) => {
+            try {
+              const [urlRes, lyricRes] = await Promise.all([
+                fetch(
+                  `http://localhost:3000/song/url/?hash=${song.hash}&quality=flac`,
+                  { credentials: "include" }
+                ),
+                fetch(`http://localhost:3000/search/lyric?hash=${song.hash}`, {
+                  credentials: "include",
+                }),
+              ]);
+
+              const [urlData, lyricData] = await Promise.all([
+                urlRes.json(),
+                lyricRes.json(),
+              ]);
+
+              let lyrics = null;
+              const candidate = lyricData.candidates?.[0];
+              if (candidate) {
+                try {
+                  const textDataRes = await fetch(
+                    `http://localhost:3000/lyric?id=${candidate.id}&accesskey=${candidate.accesskey}&fmt=lrc&decode=true`,
+                    { credentials: "include" }
+                  );
+                  const textData = await textDataRes.json();
+                  lyrics = parseLRC(textData.decodeContent);
+                } catch (error) {
+                  console.error("歌词详情请求失败:", error);
+                }
+              }
+
+              return {
+                song,
+                url: urlData.url?.[0] || "",
+                lyrics,
+              };
+            } catch (err) {
+              console.log("获取url失败");
+              return null;
+            }
+          })
+        );
+
+        // 过滤掉无效的歌曲
+        const validSongs = songsWithUrls.filter(
+          (item) => item !== null && item.url
+        );
+
+        // 更新状态
+        setSongs(validSongs.map((item) => item!.song));
+        setUrlsList(validSongs.map((item) => item!.url));
+        setTextList(validSongs.map((item) => item!.lyrics));
+
+        // 如果有歌曲，默认选择第一首
+        if (validSongs.length > 0) {
+          setCurrentSongSafe(validSongs[0]!.song);
+          setCurrentSongIndex(0);
+          setCurrentLyrics(validSongs[0]!.lyrics || []);
+        }
+
+        // 使用 ref 来检查当前歌曲
+        if (
+          currentSongRef.current &&
+          !validSongs.some(
+            (item) => item!.song.hash === currentSongRef.current!.hash
+          )
+        ) {
+          setCurrentSongSafe(null);
+          setCurrentSongIndex(null);
+          setIsPlaying(false);
+        }
+      }
+    } catch (error) {
+      console.error("获取数据失败:", error);
+      setError("获取音乐数据失败，请刷新重试");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [setCurrentSongSafe]);
+
+  // 初始化时获取数据
+  useEffect(() => {
+    getPlayList();
+  }, [getPlayList]);
 
   // 初始化音频上下文
   const initAudioContext = useCallback(() => {
@@ -178,23 +308,46 @@ const WebAudioPlayer: React.FC<WebAudioPlayerProps> = ({
         return;
       }
 
-      if (currentSong?.hash === song.hash) {
-        if (isPlaying) {
-          pauseAudio();
-        } else {
-          await playAudio();
-        }
-      } else {
-        setCurrentSong(song);
-        setCurrentSongIndex(index);
-        setCurrentLyrics(textList[index] ? parseLRC(textList[index]) : []);
-        pauseTimeRef.current = 0;
+      try {
+        setIsLoading(true);
 
-        await loadAudio(urlsList[index]);
-        await playAudio();
+        if (currentSong?.hash === song.hash) {
+          // 同一首歌，切换播放/暂停
+          if (isPlaying) {
+            pauseAudio();
+          } else {
+            await playAudio();
+          }
+        } else {
+          // 新歌曲，先加载再播放
+          setCurrentSong(song);
+          setCurrentSongIndex(index);
+          setCurrentLyrics(textList[index] || []);
+          pauseTimeRef.current = 0;
+
+          const audioBuffer = await loadAudio(urlsList[index]);
+          if (audioBuffer) {
+            audioBufferRef.current = audioBuffer;
+            setDuration(audioBuffer.duration);
+            await playAudio();
+          }
+        }
+      } catch (error) {
+        console.error("播放失败:", error);
+        setError("播放失败，请重试");
+      } finally {
+        setIsLoading(false);
       }
     },
-    [currentSong, isPlaying, urlsList, textList, playAudio, pauseAudio]
+    [
+      currentSong,
+      isPlaying,
+      urlsList,
+      textList,
+      playAudio,
+      pauseAudio,
+      loadAudio,
+    ]
   );
 
   // 下一首
@@ -218,9 +371,7 @@ const WebAudioPlayer: React.FC<WebAudioPlayerProps> = ({
     if (found) {
       setCurrentSongIndex(nextIndex);
       setCurrentSong(songs[nextIndex]);
-      setCurrentLyrics(
-        textList[nextIndex] ? parseLRC(textList[nextIndex]) : []
-      );
+      setCurrentLyrics(textList[nextIndex] || []);
 
       loadAudio(urlsList[nextIndex]).then(() => {
         playAudio();
@@ -239,7 +390,7 @@ const WebAudioPlayer: React.FC<WebAudioPlayerProps> = ({
 
     setCurrentSong(prevSong);
     setCurrentSongIndex(prevIndex);
-    setCurrentLyrics(textList[prevIndex] ? parseLRC(textList[prevIndex]) : []);
+    setCurrentLyrics(textList[prevIndex] || []);
 
     loadAudio(urlsList[prevIndex]).then(() => {
       playAudio();
@@ -425,6 +576,18 @@ const WebAudioPlayer: React.FC<WebAudioPlayerProps> = ({
     }
   }, [showVisualizer, drawVisualizer]);
 
+  if (isLoading) {
+    return <div className="loading">加载中...</div>;
+  }
+
+  if (error) {
+    return <div className="error">{error}</div>;
+  }
+
+  if (songs.length === 0) {
+    return <div className="empty">暂无歌曲</div>;
+  }
+
   return (
     <div className="container">
       {/* 可视化画布 */}
@@ -439,7 +602,7 @@ const WebAudioPlayer: React.FC<WebAudioPlayerProps> = ({
 
       {/* 歌曲列表 */}
       <div className="songList">
-        <h2 className="listTitle">播放列表</h2>
+        <div className="listTitle">播放列表</div>
         <div className="listContainer">
           {songs.map((song, index) => (
             <div
@@ -512,10 +675,7 @@ const WebAudioPlayer: React.FC<WebAudioPlayerProps> = ({
           <div
             className="progressBar"
             onClick={handleProgressClick}
-            // onMouseDown={handleMouseDown}
             onMouseMove={isDragging ? handleProgressClick : undefined}
-            // onMouseUp={handleMouseUp}
-            // onMouseLeave={handleMouseUp}
           >
             <div
               className="progressFill"
@@ -610,4 +770,5 @@ const WebAudioPlayer: React.FC<WebAudioPlayerProps> = ({
     </div>
   );
 };
+
 export default WebAudioPlayer;

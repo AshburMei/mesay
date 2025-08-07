@@ -28,7 +28,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/**/*"
+    "src/**/*",
+    "KuGouMusicApi/server.js"
   ],
   "exclude": ["node_modules"]
 }
