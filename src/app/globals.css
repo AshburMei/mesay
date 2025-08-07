@@ -1,42 +1,51 @@
+/* 全局变量和基础样式 */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
+  --primary-color: azure;
+  --bg-color: black;
+  --cover-size: 80px;
+  --small-cover-size: 60px;
+  --border-radius: 10px;
+  --control-height: 80px;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--primary-color);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, sans-serif;
+  height: 100vh;
+  overflow: hidden;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* 播放器容器 */
+.player-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-wrap: wrap;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* 标题区域 */
+.top-bar {
+  width: 100vw;
+  height: 8vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.player-title {
+  width: 50vw;
+  padding: 5px 0;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+/* 主展示区 */
+.main-displayer {
+  width: 100vw;
+  height: 92vh;
 }

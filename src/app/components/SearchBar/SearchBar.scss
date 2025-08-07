@@ -1,0 +1,28 @@
+.search_form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  padding: 5px 0px 0px 0px;
+  :hover {
+    transform: scale(1.05);
+  }
+  input {
+    width: 110px;
+    height: 24px;
+    border: 3px solid transparent;
+    box-shadow: 1px 1px 3px grey;
+    border-radius: 8px;
+    :hover {
+      transform: scale(1.05);
+    }
+  }
+  .search_button {
+    height: 24px;
+    background-color: white;
+    border: 3px solid transparent;
+    box-shadow: 1px 1px 3px gold;
+    border-radius: 8px;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+}

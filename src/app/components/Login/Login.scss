@@ -1,0 +1,206 @@
+// Variables
+$primary-color: #1890ff;
+$error-color: #f5222d;
+$text-color: white;
+$light-text: #fff;
+$border-color: #d9d9d9;
+$hover-color: #40a9ff;
+$disabled-color: #f5f5f5;
+$shadow: 0 2px 4px white;
+$transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+
+// Base styles
+.login-container {
+  position: relative;
+  display: inline-block;
+
+  .login-button {
+    padding: 1px 6px;
+    background-color: white;
+    color: black;
+    border: 3px solid transparent;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    font-size: 16px;
+
+    &:hover {
+      transform: scale(1.04);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+}
+
+// Login overlay
+.login-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+// Login box
+.login-box {
+  width: 360px;
+  padding: 24px;
+  background-color: #000;
+  border-radius: 8px;
+  box-shadow: $shadow;
+  animation: fadeIn 0.3s;
+
+  .login-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: $text-color;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .error-message {
+    color: $error-color;
+    margin-bottom: 16px;
+    text-align: center;
+    font-size: 14px;
+  }
+}
+
+// Input groups
+.input-group {
+  margin-bottom: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: $text-color;
+  }
+
+  input {
+    width: 50%;
+    padding: 10px 12px;
+    border: 1px solid $border-color;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: $transition;
+    margin-right: 10px;
+
+    &:focus {
+      border-color: $primary-color;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+    }
+
+    &:disabled {
+      background-color: $disabled-color;
+      cursor: not-allowed;
+    }
+  }
+
+  // Special styles for mobile input with send code button
+  &:first-of-type {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+
+    label {
+      width: 100%;
+    }
+
+    input {
+      flex: 1;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    .send-code-button {
+      padding: 10px 12px;
+      background-color: $primary-color;
+      color: $light-text;
+      border: none;
+      border-radius: 0 4px 4px 0;
+      font-size: 14px;
+      cursor: pointer;
+      transition: $transition;
+      white-space: nowrap;
+
+      &:hover {
+        background-color: $hover-color;
+      }
+
+      &:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// Login submit button
+.login-submit {
+  width: 100%;
+  padding: 12px;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: $transition;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+}
+
+// Animation
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 480px) {
+  .login-box {
+    width: 90%;
+    padding: 16px;
+  }
+
+  .input-group {
+    margin-bottom: 16px;
+
+    &:first-of-type {
+      flex-direction: column;
+
+      input {
+        border-radius: 4px;
+        margin-bottom: 8px;
+      }
+
+      .send-code-button {
+        width: 100%;
+        border-radius: 4px;
+      }
+    }
+  }
+}
