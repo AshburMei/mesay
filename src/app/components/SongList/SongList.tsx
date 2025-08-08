@@ -1,4 +1,3 @@
-//使用web audio api实现功能
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
@@ -32,6 +31,7 @@ export default function SongList() {
   const startTimeRef = useRef<number>(0);
   const pauseTimeRef = useRef<number>(0);
   const isInitializedRef = useRef<boolean>(false);
+  const loadingRef = useRef<boolean>(false); // 添加加载状态追踪
 
   // 歌单和歌词相关状态
   const [songList, setSongList] = useState<any>("");
@@ -145,7 +145,53 @@ export default function SongList() {
 
             setTimeout(() => {
               if (urlsList[nextIndex]) {
-                loadAndPlayAudio(urlsList[nextIndex], 0);
+                // 这里直接调用加载函数，避免依赖问题
+                const loadNext = async () => {
+                  try {
+                    if (!audioContextRef.current) return;
+
+                    const response = await fetch(urlsList[nextIndex]);
+                    if (!response.ok) return;
+
+                    const arrayBuffer = await response.arrayBuffer();
+                    const audioBuffer =
+                      await audioContextRef.current.decodeAudioData(
+                        arrayBuffer
+                      );
+                    audioBufferRef.current = audioBuffer;
+
+                    const source = audioContextRef.current.createBufferSource();
+                    source.buffer = audioBuffer;
+                    source.loop = isLoop;
+                    source.playbackRate.value = playbackRate;
+                    source.connect(gainNodeRef.current!);
+                    audioSourceRef.current = source;
+
+                    pauseTimeRef.current = 0;
+                    startTimeRef.current = audioContextRef.current.currentTime;
+                    source.start(0, 0);
+                    setDuration(audioBuffer.duration);
+                    setCurrentTime(0);
+                    setIsPlaying(true);
+
+                    source.onended = () => {
+                      if (
+                        audioSourceRef.current === source &&
+                        isLoop &&
+                        isPlaying
+                      ) {
+                        setTimeout(() => {
+                          if (audioSourceRef.current === source) {
+                            loadNext();
+                          }
+                        }, 10);
+                      }
+                    };
+                  } catch (error) {
+                    console.error("Error loading next audio:", error);
+                  }
+                };
+                loadNext();
               }
             }, 10);
           }
@@ -164,109 +210,155 @@ export default function SongList() {
     songList,
     currentSongIndex,
     urlsList,
+    playbackRate,
   ]);
 
   // 加载并播放音频
-  const loadAndPlayAudio = async (url: string, seekTime: number = 0) => {
-    try {
-      // 初始化音频上下文
-      if (!isInitializedRef.current) {
-        initAudioContext();
+  const loadAndPlayAudio = useCallback(
+    async (url: string, seekTime: number = 0) => {
+      // 防止重复加载
+      if (loadingRef.current) {
+        return;
       }
 
-      if (!audioContextRef.current) return;
+      loadingRef.current = true;
 
-      // 停止当前播放
-      stopCurrentAudio();
-
-      // 获取音频数据
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer =
-        await audioContextRef.current.decodeAudioData(arrayBuffer);
-      audioBufferRef.current = audioBuffer;
-
-      // 创建新的音频源节点
-      const source = audioContextRef.current.createBufferSource();
-      source.buffer = audioBuffer;
-      source.loop = isLoop;
-      source.playbackRate.value = playbackRate;
-
-      // 连接到已存在的音频图
-      source.connect(gainNodeRef.current!);
-      audioSourceRef.current = source;
-
-      // 设置播放时间
-      pauseTimeRef.current = seekTime;
-      startTimeRef.current = audioContextRef.current.currentTime;
-
-      // 从指定时间开始播放
-      source.start(0, seekTime);
-
-      // 设置持续时间
-      setDuration(audioBuffer.duration);
-      setCurrentTime(seekTime);
-      setIsPlaying(true);
-
-      // 开始时间更新循环
-      if (requestRef.current) {
-        cancelAnimationFrame(requestRef.current);
-      }
-      requestRef.current = requestAnimationFrame(updateCurrentTime);
-
-      // 播放结束事件处理
-      source.onended = () => {
-        if (audioSourceRef.current === source) {
-          // 确保是当前播放的源节点
-          if (isLoop && isPlaying) {
-            // 循环播放
-            setTimeout(() => {
-              if (audioSourceRef.current === source) {
-                // 再次确认
-                loadAndPlayAudio(url, 0);
-              }
-            }, 10);
-          }
-          // 注意：非循环模式下的下一首播放已在 updateCurrentTime 中处理
+      try {
+        // 初始化音频上下文
+        if (!isInitializedRef.current) {
+          initAudioContext();
         }
-      };
-    } catch (error) {
-      console.error("Error loading audio:", error);
-      setIsPlaying(false);
-    }
-  };
 
-  // 播放/暂停控制
-  const togglePlay = async (song: SongsItem, index: number) => {
-    if (!urlsList[index]) return;
+        if (!audioContextRef.current) {
+          loadingRef.current = false;
+          return;
+        }
 
-    if (currentSong?.hash === song.hash) {
-      // 同一首歌
-      if (isPlaying) {
-        pauseAudio();
-      } else {
-        resumeAudio();
+        // 停止当前播放
+        stopCurrentAudio();
+
+        // 获取音频数据
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer =
+          await audioContextRef.current.decodeAudioData(arrayBuffer);
+        audioBufferRef.current = audioBuffer;
+
+        // 创建新的音频源节点
+        const source = audioContextRef.current.createBufferSource();
+        source.buffer = audioBuffer;
+        source.loop = isLoop;
+        source.playbackRate.value = playbackRate;
+
+        // 连接到已存在的音频图
+        source.connect(gainNodeRef.current!);
+        audioSourceRef.current = source;
+
+        // 设置播放时间
+        pauseTimeRef.current = seekTime;
+        startTimeRef.current = audioContextRef.current.currentTime;
+
+        // 从指定时间开始播放
+        source.start(0, seekTime);
+
+        // 设置持续时间
+        setDuration(audioBuffer.duration);
+        setCurrentTime(seekTime);
+        setIsPlaying(true);
+
+        // 开始时间更新循环
+        if (requestRef.current) {
+          cancelAnimationFrame(requestRef.current);
+        }
+
+        const startUpdateLoop = () => {
+          if (
+            audioContextRef.current &&
+            audioSourceRef.current === source &&
+            isPlaying
+          ) {
+            const elapsed =
+              audioContextRef.current.currentTime - startTimeRef.current;
+            const newCurrentTime = pauseTimeRef.current + elapsed;
+
+            if (newCurrentTime >= audioBuffer.duration) {
+              if (isLoop) {
+                pauseTimeRef.current = 0;
+                startTimeRef.current = audioContextRef.current.currentTime;
+                setCurrentTime(0);
+                requestRef.current = requestAnimationFrame(startUpdateLoop);
+              } else {
+                setIsPlaying(false);
+                setCurrentTime(0);
+                pauseTimeRef.current = 0;
+                if (audioSourceRef.current === source) {
+                  // 播放下一首
+                  setTimeout(() => {
+                    if (songList?.songs?.length && currentSongIndex !== null) {
+                      const nextIndex =
+                        (currentSongIndex + 1) % songList.songs.length;
+                      const nextSong = songList.songs[nextIndex];
+
+                      setCurrentSong(nextSong);
+                      setCurrentSongIndex(nextIndex);
+
+                      if (urlsList[nextIndex]) {
+                        loadAndPlayAudio(urlsList[nextIndex], 0);
+                      }
+                    }
+                  }, 50);
+                }
+              }
+            } else {
+              setCurrentTime(newCurrentTime);
+              if (audioSourceRef.current === source) {
+                requestRef.current = requestAnimationFrame(startUpdateLoop);
+              }
+            }
+          }
+        };
+
+        // 延迟启动更新循环，确保状态已设置
+        setTimeout(() => {
+          if (audioSourceRef.current === source) {
+            requestRef.current = requestAnimationFrame(startUpdateLoop);
+          }
+        }, 10);
+
+        // 播放结束事件处理
+        source.onended = () => {
+          if (audioSourceRef.current === source) {
+            if (isLoop) {
+              setTimeout(() => {
+                if (audioSourceRef.current === source) {
+                  loadAndPlayAudio(url, 0);
+                }
+              }, 10);
+            }
+          }
+        };
+      } catch (error) {
+        console.error("Error loading audio:", error);
+        setIsPlaying(false);
+      } finally {
+        loadingRef.current = false;
       }
-    } else {
-      // 新歌曲，先停止当前播放
-      stopCurrentAudio();
-      setIsPlaying(false);
-
-      setCurrentSong(song);
-      setCurrentSongIndex(index);
-      setCurrentTime(0);
-      pauseTimeRef.current = 0;
-
-      // 延迟一帧再开始播放新歌曲
-      setTimeout(() => {
-        loadAndPlayAudio(urlsList[index], 0);
-      }, 10);
-    }
-  };
+    },
+    [
+      isLoop,
+      playbackRate,
+      stopCurrentAudio,
+      initAudioContext,
+      songList,
+      currentSongIndex,
+      urlsList,
+      isPlaying,
+    ]
+  );
 
   // 暂停音频
   const pauseAudio = useCallback(() => {
@@ -283,16 +375,58 @@ export default function SongList() {
     }
   }, [isPlaying, stopCurrentAudio]);
 
-  // 恢复播放
-  const resumeAudio = useCallback(() => {
-    if (!isPlaying && audioBufferRef.current && currentSongIndex !== null) {
-      loadAndPlayAudio(urlsList[currentSongIndex], pauseTimeRef.current);
-    }
-  }, [isPlaying, currentSongIndex, urlsList]);
+  // 恢复播放 - 先声明一个空的实现，稍后更新
+  const resumeAudio = useCallback(async () => {
+    // 实现将在 loadAndPlayAudio 声明后更新
+  }, []);
+
+  // 播放/暂停控制
+  const togglePlay = useCallback(
+    async (song: SongsItem, index: number) => {
+      if (!urlsList[index] || loadingRef.current) return;
+
+      if (currentSong?.hash === song.hash) {
+        // 同一首歌
+        if (isPlaying) {
+          pauseAudio();
+        } else {
+          // 直接调用 loadAndPlayAudio 而不是 resumeAudio
+          if (
+            audioBufferRef.current &&
+            currentSongIndex !== null &&
+            urlsList[currentSongIndex]
+          ) {
+            await loadAndPlayAudio(
+              urlsList[currentSongIndex],
+              pauseTimeRef.current
+            );
+          }
+        }
+      } else {
+        // 新歌曲，先停止当前播放
+        stopCurrentAudio();
+        setIsPlaying(false);
+
+        setCurrentSong(song);
+        setCurrentSongIndex(index);
+        setCurrentTime(0);
+        pauseTimeRef.current = 0;
+
+        // 直接调用 loadAndPlayAudio，不延迟
+        await loadAndPlayAudio(urlsList[index], 0);
+      }
+    },
+    [urlsList, currentSong, isPlaying, pauseAudio, stopCurrentAudio]
+  );
 
   // 下一首
-  const handlePlayNext = useCallback(() => {
-    if (!songList?.songs?.length || currentSongIndex === null) return;
+  const handlePlayNext = useCallback(async () => {
+    if (
+      !songList?.songs?.length ||
+      currentSongIndex === null ||
+      loadingRef.current
+    )
+      return;
 
     // 先停止当前播放
     stopCurrentAudio();
@@ -306,17 +440,26 @@ export default function SongList() {
     setCurrentTime(0);
     pauseTimeRef.current = 0;
 
-    // 延迟一帧再开始播放新歌曲
-    setTimeout(() => {
-      if (urlsList[nextIndex]) {
-        loadAndPlayAudio(urlsList[nextIndex], 0);
-      }
-    }, 10);
-  }, [songList, currentSongIndex, urlsList, stopCurrentAudio]);
+    // 直接调用，不延迟
+    if (urlsList[nextIndex]) {
+      await loadAndPlayAudio(urlsList[nextIndex], 0);
+    }
+  }, [
+    songList,
+    currentSongIndex,
+    urlsList,
+    stopCurrentAudio,
+    loadAndPlayAudio,
+  ]);
 
   // 上一首
-  const handlePlayPrev = useCallback(() => {
-    if (!songList?.songs?.length || currentSongIndex === null) return;
+  const handlePlayPrev = useCallback(async () => {
+    if (
+      !songList?.songs?.length ||
+      currentSongIndex === null ||
+      loadingRef.current
+    )
+      return;
 
     // 先停止当前播放
     stopCurrentAudio();
@@ -331,13 +474,17 @@ export default function SongList() {
     setCurrentTime(0);
     pauseTimeRef.current = 0;
 
-    // 延迟一帧再开始播放新歌曲
-    setTimeout(() => {
-      if (urlsList[prevIndex]) {
-        loadAndPlayAudio(urlsList[prevIndex], 0);
-      }
-    }, 10);
-  }, [songList, currentSongIndex, urlsList, stopCurrentAudio]);
+    // 直接调用，不延迟
+    if (urlsList[prevIndex]) {
+      await loadAndPlayAudio(urlsList[prevIndex], 0);
+    }
+  }, [
+    songList,
+    currentSongIndex,
+    urlsList,
+    stopCurrentAudio,
+    loadAndPlayAudio,
+  ]);
 
   // 切换循环
   const toggleLoop = useCallback(() => {
@@ -396,7 +543,13 @@ export default function SongList() {
   // 进度条点击
   const handleProgressClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!audioBufferRef.current || !duration || isDragging) return;
+      if (
+        !audioBufferRef.current ||
+        !duration ||
+        isDragging ||
+        loadingRef.current
+      )
+        return;
 
       const progressBar = e.currentTarget;
       const rect = progressBar.getBoundingClientRect();
@@ -419,7 +572,14 @@ export default function SongList() {
         }
       }
     },
-    [duration, currentSongIndex, urlsList, isPlaying, isDragging]
+    [
+      duration,
+      currentSongIndex,
+      urlsList,
+      isPlaying,
+      isDragging,
+      loadAndPlayAudio,
+    ]
   );
 
   // 获取歌单数据
@@ -547,7 +707,8 @@ export default function SongList() {
       if (
         !isNaN(time) &&
         currentSongIndex !== null &&
-        urlsList[currentSongIndex]
+        urlsList[currentSongIndex] &&
+        !loadingRef.current
       ) {
         setCurrentTime(time);
         pauseTimeRef.current = time;
@@ -556,7 +717,7 @@ export default function SongList() {
         }
       }
     },
-    [currentSongIndex, urlsList, isPlaying]
+    [currentSongIndex, urlsList, isPlaying, loadAndPlayAudio]
   );
 
   // 清理资源
