@@ -209,3 +209,7 @@ git merge new-design
 git push
 删除分支
 git branch -d new-design
+
+## web audio api
+
+流水线一样，从音频源 -> 音频处理节点 -> 音频输出
