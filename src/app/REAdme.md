@@ -1,3 +1,7 @@
+## 下一步优化 后台播放
+
+可行的几个方案：1.Page Visibility API 来监测页面的是否可见
+
 ## 1启动后端和前端端口
 
 cd mesay
@@ -211,5 +215,3 @@ git push
 git branch -d new-design
 
 ## web audio api
-
-流水线一样，从音频源 -> 音频处理节点 -> 音频输出

@@ -12,8 +12,7 @@ const Login = () => {
   const [error, setError] = useState<string>("");
   const [countdown, setCountdown] = useState<number>(0);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // 新增登录状态
-
-  // WeChat login states
+  //微信的
   const [qrCodeBase64, setQrCodeBase64] = useState<string>("");
   const [qrCodeLink, setQrCodeLink] = useState<string>("");
   const [uuid, setUuid] = useState<string>("");
@@ -132,7 +131,7 @@ const Login = () => {
         setScanStatus(status);
 
         if (status === 405) {
-          console.log("收到 wx_code:", wx_code); // 调试日志
+          // console.log("收到 wx_code:", wx_code); // 调试日志
           setWxCode(wx_code);
           clearInterval(interval); // 先停止轮询
           await handleWeChatLogin(wx_code); // 确保登录请求完成
