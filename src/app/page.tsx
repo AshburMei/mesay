@@ -1,10 +1,10 @@
 "use client";
-
 import React, { useState, useRef, useEffect } from "react";
 import SearchBar from "./components/SearchBar/SearchBar";
 import "./globals.css";
 import Login from "./components/Login/Login";
 import WebAudioPlayer from "./components/SongList/SongList";
+import Time from "./components/Time/Time";
 export default function Home() {
   const [searchData, setSearchData] = useState<any>("");
   //状态管理
@@ -33,6 +33,7 @@ export default function Home() {
         <SearchBar onSearch={handleSearch} />
         <h1 className="player-title">MESong</h1>
         <Login />
+        <Time />
       </div>
 
       <div className="song-list">

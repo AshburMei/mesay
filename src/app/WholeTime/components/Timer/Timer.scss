@@ -1,0 +1,51 @@
+.timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  border-radius: 12px;
+  width: 260px;
+  margin: 1rem;
+
+  .time-display {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    padding: 0.8rem;
+    border-radius: 8px;
+    background: #0c0c0c;
+    letter-spacing: 2px;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #333;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 0.8rem;
+    width: 100%;
+
+    button {
+      padding: 0.7rem 0;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex: 1;
+      text-align: center;
+
+      &:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { SongsItem } from "@/types/songlist-types/songsitem";
 import { UrlList } from "@/types/songlist-types/urlsList";
 import { parseLRC, findCurrentLine } from "@/utils/lrcParser";
+import Image from "next/image";
 import {
   PlayListResponse,
   SongListResponse,
@@ -233,7 +234,6 @@ export default function SongList() {
       const elapsed =
         audioContextRef.current.currentTime - startTimeRef.current;
       const newCurrentTime = pauseTimeRef.current + elapsed;
-
       // 检查是否播放完毕
       if (newCurrentTime >= audioBufferRef.current.duration) {
         if (isLoop) {
@@ -620,9 +620,13 @@ export default function SongList() {
                 className={`song-item ${isCurrent ? "active" : ""}`}
                 onClick={() => togglePlay(item, index)}
               >
-                <img
+                <Image
                   src={getCoverUrl(item)}
                   alt={item.albuminfo?.name || "未知专辑"}
+                  width={480}
+                  height={480}
+                  loading="lazy"
+                  placeholder="empty"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "/default-cover.jpg";
                   }}
@@ -643,9 +647,13 @@ export default function SongList() {
       <div className="song-display-container">
         {currentSong && (
           <div className="current-song-display">
-            <img
+            <Image
               src={getCoverUrl(currentSong)}
               alt={currentSong.name}
+              width={480}
+              height={480}
+              loading="lazy"
+              placeholder="empty"
               className="display-cover"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "/default-cover.jpg";

@@ -1,0 +1,23 @@
+.whole-time {
+  display: flex;
+  flex-direction: column; /* 上下排列（日期在上，时间在下） */
+  justify-content: center; /* 垂直居中 */
+  align-items: center; /* 水平居中 */
+  height: 100vh; /* 占满整个屏幕高度 */
+  background: #000; /* 黑色背景（和你截图一致） */
+  color: white; /* 灰色文字 */
+}
+
+.clock {
+  text-align: center;
+}
+
+.clock > div.year {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.clock {
+  font-size: 100px; /* 时间大号字体 */
+  font-weight: bold;
+}

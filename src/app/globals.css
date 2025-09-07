@@ -36,6 +36,14 @@ body {
   justify-content: center;
   align-items: center;
 }
+.top-bar .clock {
+  width: 100px;
+  text-align: center;
+  cursor: pointer;
+  .year {
+    display: none;
+  }
+}
 .player-title {
   width: 50vw;
   padding: 5px 0;
