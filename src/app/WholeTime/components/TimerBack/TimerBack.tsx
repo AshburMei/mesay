@@ -1,3 +1,4 @@
+"use client";
 import "./TimerBack.scss";
 import { useState, useEffect } from "react";
 export default function TimerBack() {

@@ -1,0 +1,157 @@
+// variables.scss - 公共变量和混入定义
+
+// 颜色定义
+$primary-color: #ffffff;
+$secondary-color: #1db954;
+$bg-color: #121212;
+$bg-secondary: #181818;
+$text-secondary: #b3b3b3;
+$text-muted: #666666;
+$accent-color: #1ed760;
+$error-color: #e22134;
+$warning-color: #ffa500;
+
+// 背景色变量
+$bg-glass: rgba(0, 0, 0, 0.6);
+$bg-glass-hover: rgba(0, 0, 0, 0.8);
+$bg-overlay: rgba(0, 0, 0, 0.4);
+
+// 尺寸定义
+$cover-size: 8vw;
+$small-cover-size: 6vw;
+$border-radius: 0.8vw;
+$border-radius-small: 0.5vw;
+$border-radius-large: 1.2vw;
+$control-height: 8vh;
+
+// 间距定义
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+$spacing-xxl: 3rem;
+
+// 阴影定义
+$shadow-sm:
+  0 1px 3px rgba(0, 0, 0, 0.12),
+  0 1px 2px rgba(0, 0, 0, 0.24);
+$shadow-md:
+  0 3px 6px rgba(0, 0, 0, 0.16),
+  0 3px 6px rgba(0, 0, 0, 0.23);
+$shadow-lg:
+  0 10px 20px rgba(0, 0, 0, 0.19),
+  0 6px 6px rgba(0, 0, 0, 0.23);
+$shadow-xl:
+  0 14px 28px rgba(0, 0, 0, 0.25),
+  0 10px 10px rgba(0, 0, 0, 0.22);
+
+// 动画和过渡
+$transition: all 0.3s ease;
+$transition-fast: all 0.15s ease;
+$transition-slow: all 0.5s ease;
+
+// 断点定义
+$mobile-breakpoint: 768px;
+$tablet-breakpoint: 1024px;
+$desktop-breakpoint: 1200px;
+
+// Z-index 层级
+$z-index-dropdown: 100;
+$z-index-modal: 200;
+$z-index-tooltip: 300;
+
+// 混入定义
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+@mixin hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@mixin text-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@mixin glass-effect {
+  background: $bg-glass;
+  backdrop-filter: blur(10px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: $border-radius;
+}
+
+@mixin hover-lift {
+  transition: $transition;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-lg;
+  }
+}
+
+@mixin button-reset {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  outline: none;
+}
+
+@mixin gradient-text {
+  background: linear-gradient(135deg, $secondary-color, $accent-color);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+// 响应式混入
+@mixin mobile {
+  @media (max-width: $mobile-breakpoint) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: $tablet-breakpoint) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: $desktop-breakpoint) {
+    @content;
+  }
+}
+
+// 无障碍支持
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}
+
+@mixin high-contrast {
+  @media (prefers-contrast: high) {
+    @content;
+  }
+}

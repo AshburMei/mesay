@@ -1,59 +1,44 @@
-/* 全局变量和基础样式 */
-:root {
-  --primary-color: azure;
-  --bg-color: black;
-  --cover-size: 80px;
-  --small-cover-size: 60px;
-  --border-radius: 10px;
-  --control-height: 80px;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  background-color: var(--bg-color);
-  color: var(--primary-color);
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
-    Cantarell, sans-serif;
-  height: 100vh;
-  overflow: hidden;
+  background: black;
+  color: #fff;
+  min-height: 100vh;
+  overflow-x: hidden;
+  min-width: 775px;
 }
 
-/* 播放器容器 */
 .player-container {
-  width: 100vw;
-  height: 100vh;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  min-width: 500px;
+  height: 100vh;
+  margin: 0 auto;
+  padding: 10px;
+  gap: 10px;
+}
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 20px;
+  border-radius: 12px;
+  background: black;
 }
 
-/* 标题区域 */
-.top-bar {
-  width: 100vw;
-  height: 8vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.top-bar .clock {
-  width: 100px;
-  text-align: center;
-  cursor: pointer;
-  .year {
-    display: none;
-  }
-}
 .player-title {
-  width: 50vw;
-  padding: 5px 0;
-  text-align: center;
-  font-size: 1.5rem;
-  font-weight: bold;
-  flex-shrink: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1db954;
+  margin: 0 20px;
 }
-/* 主展示区 */
-.main-displayer {
-  width: 100vw;
-  height: 92vh;
+
+.main-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }

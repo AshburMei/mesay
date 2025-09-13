@@ -1,3 +1,4 @@
+"use client";
 import { clear, time } from "console";
 import "./Timer.scss";
 import { useState, useEffect, use } from "react";
